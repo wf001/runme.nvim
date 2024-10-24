@@ -1,32 +1,39 @@
-local function matcher(ext, commands)
-  local current_file = " " .. vim.fn.expand("%:p")
+local M = {}
+
+local function matched_cmd(ext, commands)
   print(vim.inspect(commands))
   print(vim.inspect(ext))
 
   if commands[ext] == nil then
-    return "terminal"
+    return ":terminal "
   end
 
-  local res = commands[ext](current_file)
+  return commands[ext]
+end
 
-  return res
+local function terminal_stmt(opt)
+  return ":terminal "
 end
 
 local function runit(commands)
   if commands == nil then
-    commands = "terminal"
+    vim.notify("argument cant be empty", vim.log.levels.WARN)
   end
 
-  vim.cmd(":vsplit")
-  vim.cmd(": " .. matcher(vim.fn.expand("%:e"), commands))
+  vim.cmd("autocmd TermOpen * setlocal nonumber")
+  vim.cmd("autocmd TermOpen * setlocal norelativenumber")
+
+  vim.cmd(":split")
+  vim.cmd(terminal_stmt({}) .. matched_cmd(vim.fn.expand("%:e"), commands) .. "")
+  vim.api.nvim_feedkeys("i", "n", false)
 end
 
-local function setup(commands)
-  vim.api.nvim_create_user_command("RunIt", function()
+local set_key = vim.api.nvim_create_user_command
+
+function M.setup(commands)
+  set_key("RunMe", function()
     runit(commands)
   end, {})
 end
 
-return {
-  setup = setup,
-}
+return M
