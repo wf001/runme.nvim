@@ -1,51 +1,70 @@
 local M = {}
+local set_key = vim.api.nvim_create_user_command
+local DEFAULT_OPT = require 'runme.const'
 
 local function matched_cmd(ext, commands)
-  print(vim.inspect(commands))
-  print(vim.inspect(ext))
-
   if commands[ext] == nil then
-    return ":terminal "
+    return ""
   end
 
   return commands[ext]
 end
 
-local function terminal_stmt(opt)
+local function terminal_stmt()
   return ":terminal "
 end
 
-local function runit(commands, opt)
-  if commands == nil then
-    vim.notify("argument cant be empty", vim.log.levels.WARN)
-  end
+local function do_split(opt)
+  local term_pos = opt['position']
+  local vertical = opt['vertical']
+  local split_cmd = vertical and " vsplit" or " split"
+  local do_resize = vertical and "vertical resize" or "resize"
+  local size = opt['size']
 
+  vim.cmd(":" .. term_pos .. split_cmd)
+
+  if size ~= nil then
+    vim.cmd(":" .. do_resize .. size)
+  end
+end
+
+
+local function do_command(commands)
   vim.cmd("autocmd TermOpen * setlocal nonumber")
   vim.cmd("autocmd TermOpen * setlocal norelativenumber")
 
-  local pos = opt['position'] or 'belowright'
-  local dir = opt['direction'] and " vsplit" or " split"
-  local resize_dir = dir == "vsplit" and "vertical " or ""
-
-  vim.cmd(":" .. pos .. dir)
-
-  if opt["size"] ~= nil then
-    vim.cmd(":" .. resize_dir .. "resize " .. opt["size"])
-  end
-  vim.cmd(terminal_stmt(opt) .. matched_cmd(vim.fn.expand("%:e"), commands) .. "")
+  vim.cmd(terminal_stmt() .. matched_cmd(vim.fn.expand("%:e"), commands))
   vim.api.nvim_feedkeys("i", "n", false)
 end
 
-local set_key = vim.api.nvim_create_user_command
+local function runme(commands, opts)
+  do_split(opts)
+  do_command(commands)
+end
 
-function M.setup(commands, opt)
-  set_key("RunMe", function()
-    runit(commands, opt or {})
-  end, {})
-  set_key("RunMeVertical", function()
-    opt.direction = true
-    runit(commands, opt or {})
-  end, {})
+local function merge_conf(conf)
+  return vim.tbl_deep_extend('force', DEFAULT_OPT, conf or {})
+end
+
+function M.setup(conf)
+  set_key(
+    "RunMe",
+    function()
+      local c = merge_conf(conf)
+      runme(c.commands, c.opts)
+    end,
+    {}
+  )
+
+  set_key(
+    "RunMeVertical",
+    function()
+      local c = merge_conf(conf)
+      c.opts.vertical = true
+      runme(c.commands, c.opts)
+    end,
+    {}
+  )
 end
 
 return M
