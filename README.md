@@ -1,13 +1,13 @@
 # RunMe
 
-The simple program runner🚀
+The simple program runner(experimental)🚀
 
 ## 🚀 How to use
 
 To run the following command on NeoVim.
 
 ```
-:RunIt
+:RunMe
 ```
 
 ### Settings
@@ -17,12 +17,12 @@ In `setup()`, specify a table of extensions and commands to run. Below is a samp
 ```lua
 require("runme").setup({
   commands = {
-    ts = "ts-node %",
-    py = "python %"
+    ts = "ts-node %", -- Run if current buffer has 'ts' extension.
+    py = "python %"  -- Run if current buffer has 'py' extension.
   },
   opts = {
     size = 10,
-    position = "top",
+    position = "top", -- the value must be one of 'top', 'topleft', 'topright', 'below', 'belowleft' or 'belowright'. Default value is 'belowright'
   }
 })
 
